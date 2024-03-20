@@ -1,0 +1,66 @@
+npm init
+npm install express mysql2 body-parser nodemailer cors md5 swagger-ui-express swagger-jsdoc --save
+npm i nodemon socket.io --save-dev multer
+"scripts" : "dev": "nodemon server.js"
+npm run dev
+
+
+//////////////       ENVIAR CORREOS      //////////////////
+
+const nodemailer = require('nodemailer');
+
+// Configurar el transporte
+const transporter = nodemailer.createTransport({
+  service: 'gmail', // Puedes cambiar esto según tu proveedor de correo
+  auth: {
+    user: 'tu_correo@gmail.com',
+    pass: 'tu_contraseña',
+  },
+});
+
+// Detalles del usuario y del mensaje
+const usuario = {
+  nombre: 'Nombre del Usuario',
+  correo: 'correo@example.com',
+};
+
+const mensaje = `
+¡Bienvenido a SENACHAT!
+
+Nos complace informarte que tu cuenta ha sido registrada con éxito en SENACHAT, la plataforma líder en comunicación y networking. A partir de ahora, estarás conectado con una comunidad vibrante y tendrás acceso a funciones exclusivas diseñadas para mejorar tu experiencia.
+
+Detalles de tu cuenta:
+- **Nombre de usuario:** ${usuario.nombre}
+- **Correo electrónico registrado:** ${usuario.correo}
+
+Por favor, ten en cuenta que la seguridad de tu cuenta es una prioridad para nosotros. Asegúrate de mantener la confidencialidad de tus credenciales de inicio de sesión y evita compartirlas con terceros.
+
+Para comenzar a explorar SENACHAT, simplemente inicia sesión con tu nombre de usuario y contraseña en [enlace de inicio de sesión]. Una vez dentro, podrás personalizar tu perfil, conectarte con amigos, unirte a grupos y participar en conversaciones interesantes.
+
+Si tienes alguna pregunta o necesitas asistencia, nuestro equipo de soporte estará encantado de ayudarte. Contáctanos en [correo de soporte] o visita nuestra sección de ayuda en [enlace de ayuda].
+
+Agradecemos tu confianza en SENACHAT y esperamos que disfrutes de tu experiencia en nuestra plataforma.
+
+¡Bienvenido a la comunidad SENACHAT!
+
+Atentamente,
+Tu Nombre
+Equipo de SENACHAT
+`;
+
+// Detalles del correo
+const mailOptions = {
+  from: 'tu_correo@gmail.com',
+  to: usuario.correo,
+  subject: 'Confirmación de Registro en SENACHAT',
+  html: mensaje,
+};
+
+// Enviar el correo
+transporter.sendMail(mailOptions, (error, info) => {
+  if (error) {
+    console.error('Error al enviar el correo:', error);
+  } else {
+    console.log('Correo enviado: ' + info.response);
+  }
+});
