@@ -168,6 +168,9 @@ exports.reiniciarSinLeer = (req, res) => {
 };
 
 exports.subirImagen = (req, res) => {
-  // Aquí puedes manejar la lógica después de la subida del archivo
-  res.send('¡Imagen subida con éxito!');
+  const file = req.file;
+  if(!file) {
+    res.json('No hay archivos');
+  }
+  res.json(file.filename);
 }

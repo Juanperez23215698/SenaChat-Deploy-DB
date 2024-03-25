@@ -59,9 +59,7 @@ app.use("/admin", Rutas.admin);
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerSpec));
 app.use("imagenes", express.static(path.join(__dirname, 'imagenes')));
 
-const PORT = process.env.PORT || 3000;
-
-const puerto = PORT;
+const puerto = process.env.port || 3000;
 http.listen(puerto, () => {
   console.log("Usando el puerto: " + puerto);
 });
