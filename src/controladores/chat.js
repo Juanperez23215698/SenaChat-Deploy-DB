@@ -1,4 +1,5 @@
 const conexion = require("./conexion");
+const format = require("mysql2").format;
 
 const selectGrupos = `ug.id_usuarios_grupos, 
 g.id_grupos,
@@ -99,9 +100,9 @@ exports.obtenerMensajes = async (req, res) => {
 exports.obtenerDestino = async (req, res) => {
   try {
     const { usuario, grupo } = req.params;
-    const query = `SELECT id_usuarios_grupos FROM usuarios_grupos WHERE id_grupos = '${grupo}' AND numerodoc = '${usuario}'`;
+    const query = `SELECT id_usuarios_grupos FROM usuarios_grupos WHERE id_grupos = ? AND numerodoc = ?`;
 
-    const [rows] = await conexion.execute(query);
+    const [rows] = await conexion.execute(query, [grupo, usuario]);
 
     if (rows.length > 0) res.json(rows[0].id_usuarios_grupos);
     else {
@@ -116,10 +117,11 @@ exports.obtenerDestino = async (req, res) => {
 exports.insertarMensaje = async (req, res) => {
   try {
     const mensaje = req.body;
-    const query = `INSERT INTO mensaje SET ?`;
-    const [result] = await conexion.execute(query, [mensaje]);
-
-    res.json(result.insertId);
+    const query = format(`INSERT INTO mensaje SET ?`, mensaje);
+    const [rows] = await conexion.execute(query);
+    
+    if (rows.affectedRows) res.json(rows.insertId);
+    else res.json('No se inserto el mensaje');
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ error: "Error al insertar el mensaje" });
