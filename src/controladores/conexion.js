@@ -5,7 +5,7 @@ const conexion = mysql.createConnection({
   database: process.env.DB || "sena_chat",
   user: process.env.USER || "root",
   password: process.env.PASSWORD || "",
-  port: process.env.PORT || 3306,
+  port: process.env.DB_PORT || 3306,
 });
 
 conexion.connect((error) => {
