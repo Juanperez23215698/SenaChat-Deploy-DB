@@ -14,17 +14,21 @@ exports.obtenerGrupos = (req, res) => {
   });
 };
 
-exports.obtenerUsuarios = (req, res) => {
-  const query = 
-  `SELECT primer_nom, segundo_nom, primer_apellido, segundo_apellido, 
-  u.numerodoc, fk_id_tipodoc, id_fichas, foto, fk_id_rol FROM usuarios u
-  INNER JOIN usuarios_fichas uf ON u.numerodoc = uf.numerodoc;`;
+exports.obtenerUsuarios = async (req, res) => {
+  try {
+    const query = `SELECT correo, primer_nom, segundo_nom, primer_apellido, segundo_apellido, u.numerodoc, 
+      nombre_usuario, fk_id_tipodoc, id_fichas, foto, fk_id_rol, descripcion FROM usuarios u
+      INNER JOIN usuarios_fichas uf ON u.numerodoc = uf.numerodoc WHERE uf.principal = 1;`;
 
-  conexion.query(query, (error, resultado) => {
-    if (error) console.error(error.message);
-    if (resultado.length > 0) res.json(resultado);
+    const [rows] = await conexion.execute(query);
+
+    if (rows.length > 0) res.json(rows);
     else res.json("No hay usuarios aun");
-  });
+    
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error al obtener usuarios" });
+  }
 };
 
 exports.obtenerMensajes = (req, res) => {
