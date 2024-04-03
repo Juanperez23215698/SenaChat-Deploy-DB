@@ -1,9 +1,7 @@
 const conexion = require("./conexion");
 
-const selectGrupos = 
-`ug.id_usuarios_grupos, 
+const selectGrupos = `ug.id_usuarios_grupos, 
 g.id_grupos,
-g.nom_grupos,
 g.descripcion_grupos,
 g.id_ficha,
 g.fk_tipo_grupo,
@@ -16,17 +14,17 @@ FROM usuarios_grupos ug LEFT JOIN mensaje m
 ON m.fk_destino = ug.id_usuarios_grupos GROUP BY ug.id_grupos)`;
 
 const subconsultaPrivados = 
-`( SELECT ug.id_grupos, u.foto as foto_grupo, u.numerodoc as doc, COALESCE(MAX(m.fecha_hora), '') as fecha_reciente
-FROM usuarios_grupos ug INNER JOIN usuarios u ON u.numerodoc = ug.numerodoc
-LEFT JOIN mensaje m ON m.fk_destino = ug.id_usuarios_grupos
-WHERE u.numerodoc <> '1131104356' GROUP BY ug.id_grupos, u.foto, u.numerodoc)`;
+`( SELECT ug.id_grupos, u.foto as foto_grupo, u.numerodoc as doc, u.nombre_usuario AS nom_grupos, 
+COALESCE(MAX(m.fecha_hora), '') as fecha_reciente FROM usuarios_grupos ug INNER JOIN usuarios u 
+ON u.numerodoc = ug.numerodoc LEFT JOIN mensaje m ON m.fk_destino = ug.id_usuarios_grupos 
+WHERE u.numerodoc <> ? GROUP BY ug.id_grupos, u.foto, u.numerodoc, u.nombre_usuario)`;
 
 exports.obtenerGrupos = (req, res) => {
   const numerodoc = req.params.usuario;
-  const query = `SELECT ${selectGrupos} g.foto_grupo FROM grupos g
+  const query = `SELECT ${selectGrupos} g.nom_grupos, g.foto_grupo FROM grupos g
                   LEFT JOIN ${subconsultaGrupos} subquery ON g.id_grupos = subquery.id_grupos
                   LEFT JOIN usuarios_grupos ug ON g.id_grupos = ug.id_grupos
-                  WHERE numerodoc = ? AND fk_tipo_grupo <> 1
+                  WHERE numerodoc = ? AND fk_tipo_grupo <> 1 AND ug.activo = TRUE
                   ORDER BY fecha_reciente DESC`;
 
   conexion.query(query, [numerodoc], (error, result) => {
@@ -44,9 +42,9 @@ exports.obtenerMiembros = (req, res) => {
   const grupo = req.params.grupo;
   const query = `SELECT primer_nom, segundo_nom, primer_apellido, segundo_apellido, ug.numerodoc, 
           u.fk_id_rol, foto, descripcion FROM usuarios_grupos ug INNER JOIN usuarios u 
-          ON u.numerodoc = ug.numerodoc WHERE ug.id_grupos = ${grupo} ORDER BY u.fk_id_rol`;
+          ON u.numerodoc = ug.numerodoc WHERE ug.id_grupos = ? AND ug.activo = TRUE ORDER BY u.fk_id_rol`;
 
-  conexion.query(query, (error, result) => {
+  conexion.query(query, grupo, (error, result) => {
     if (error) console.error(error.message);
 
     if (result.length > 0) {
@@ -119,11 +117,10 @@ exports.insertarMensaje = (req, res) => {
 
 exports.obtenerPrivados = (req, res) => {
   const numerodoc = req.params.documento;
-  const query = `SELECT ${selectGrupos} subquery.foto_grupo, subquery.doc FROM grupos g
-                  LEFT JOIN ${subconsultaPrivados} subquery ON g.id_grupos = subquery.id_grupos
+  const query = `SELECT ${selectGrupos} subquery.foto_grupo, subquery.nom_grupos, subquery.doc 
+                  FROM grupos g LEFT JOIN ${subconsultaPrivados} subquery ON g.id_grupos = subquery.id_grupos
                   LEFT JOIN usuarios_grupos ug ON g.id_grupos = ug.id_grupos
-                  WHERE numerodoc = ? AND fk_tipo_grupo <> 2
-                  ORDER BY fecha_reciente DESC`;
+                  WHERE numerodoc = ? AND fk_tipo_grupo <> 2 ORDER BY fecha_reciente DESC`;
 
   conexion.query(query, [numerodoc, numerodoc], (error, result) => {
     if (error) console.error(error.message);
@@ -169,8 +166,6 @@ exports.reiniciarSinLeer = (req, res) => {
 
 exports.subirImagen = (req, res) => {
   const file = req.file;
-  if(!file) {
-    res.json('No hay archivos');
-  }
+  if (!file) res.json("No hay archivos");
   res.json(file.filename);
-}
+};

@@ -52,7 +52,7 @@ CREATE TABLE tipo_mensaje
 CREATE TABLE grupos
 (
 	id_grupos INT NOT NULL AUTO_INCREMENT,
-	nom_grupos VARCHAR(20) NOT NULL,
+	nom_grupos VARCHAR(20) NULL,
 	descripcion_grupos VARCHAR(110) NOT NULL,
 	id_ficha VARCHAR(10) NOT NULL,
 	foto_grupo VARCHAR(100) NULL DEFAULT 'Grupo.png',
@@ -83,6 +83,8 @@ CREATE TABLE usuarios_grupos
 	id_grupos INT NOT NULL,
 	numerodoc VARCHAR(20) NOT NULL,
 	sin_leer INT NULL,
+	activo BOOLEAN NOT NULL,
+	fecha_union DATETIME NOT NULL,
 	PRIMARY KEY (id_usuarios_grupos)
 );
 
@@ -104,22 +106,22 @@ CREATE TABLE usuarios_fichas
 ALTER TABLE ficha
 ADD CONSTRAINT FK_ficha_programa
 FOREIGN KEY (fk_programa)
-REFERENCES programa_formacion (id_programa);
+REFERENCES programa_formacion (id_programa) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE grupos 
 ADD CONSTRAINT PK_FK_id_ficha 
 FOREIGN KEY (id_ficha) 
-REFERENCES ficha (id_ficha);
+REFERENCES ficha (id_ficha) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE grupos 
 ADD CONSTRAINT tipoGrupo 
 FOREIGN KEY (fk_tipo_grupo) 
-REFERENCES tipo_grupo(id_tipo_grupo);
+REFERENCES tipo_grupo(id_tipo_grupo) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE usuarios_grupos
 ADD CONSTRAINT FK_PK_id_grupos
 FOREIGN KEY (id_grupos)
-REFERENCES grupos (id_grupos);
+REFERENCES grupos (id_grupos) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE usuarios_grupos
 ADD CONSTRAINT FK_PK_id_usuarios 
@@ -129,27 +131,27 @@ REFERENCES usuarios (numerodoc) ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE usuarios
 ADD CONSTRAINT FK_PK_id_rol
 FOREIGN KEY (fk_id_rol)
-REFERENCES roles (id_rol);
+REFERENCES roles (id_rol) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE usuarios
 ADD CONSTRAINT FK_PK_id_documento
 FOREIGN KEY (fk_id_tipodoc)
-REFERENCES tipo_documento (id_tipodoc);
+REFERENCES tipo_documento (id_tipodoc) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE mensaje
 ADD CONSTRAINT FK_Destino
 FOREIGN KEY (fk_destino)
-REFERENCES usuarios_grupos(id_usuarios_grupos);
+REFERENCES usuarios_grupos(id_usuarios_grupos) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE mensaje
 ADD CONSTRAINT FK_PK_id_tipo
 FOREIGN KEY (id_tipo)
-REFERENCES tipo_mensaje (id_tipo);
+REFERENCES tipo_mensaje (id_tipo) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE usuarios_fichas
 ADD CONSTRAINT FK_PK_id_fichas
 FOREIGN KEY (id_fichas)
-REFERENCES ficha (id_ficha);
+REFERENCES ficha (id_ficha) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE usuarios_fichas
 ADD CONSTRAINT FK_PK_usuarios 
@@ -172,9 +174,9 @@ INSERT INTO ficha VALUES
 ('2558106', 2, 3);
 
 INSERT INTO roles VALUES 
-('1','INSTRUCTOR'),
-('2','APRENDIZ'),
-('3', 'ADMINISTRADOR');
+('1','Instructor'),
+('2','Aprendiz'),
+('3', 'Administrador');
 
 INSERT INTO tipo_documento VALUES 
 ('1','Cédula de Ciudadanía'),
@@ -234,98 +236,98 @@ INSERT INTO usuarios_fichas VALUES
 ('2558102', '12345678919', 1),
 ('2558102', '12345678001', 1),
 ('2558103', '12345678024', 1),
-('2558104', '12345678019', 1),
-('2558104', '12345678020', 1);
+('2558104', '12345678019', 2),
+('2558104', '12345678020', 2);
 -- APRENDICES PARA LA FICHA AQUI
 
 
 INSERT INTO grupos VALUES 
-('1','grupo de Heiver','Exploración de técnicas avanzadas de inteligencia artificial aplicadas al desarrollo de sistemas autónomos.','2558101', 'Grupo1.jpg',2),
-('2','grupo de Leonardo','Estudio de metodologías de seguridad informática en el desarrollo de aplicaciones web y móviles.','2558101', 'Grupo2.jpg',2),
-('3','grupo de Isaura','Análisis comparativo de lenguajes de programación para el desarrollo de aplicaciones en la nube.','2558101', 'Grupo3.jpg',2),
-('4','grupo de Manolo','Estudio del impacto del deporte en la cultura juvenil.','2558102', 'Grupo4.jpg', 2),
-('5','grupo de Wendy','Análisis de tendencias culturales en la industria del entretenimiento.','2558102', 'Grupo5.png', 2),
-('6','grupo de Javier','Exploración de la relación entre arte y tecnología en la era digital.','2558102', 'Grupo6.jpg', 2),
-('7','grupo de Alejandra','Gestión financiera en organizaciones sin fines de lucro.','2558103', 'Grupo7.jpg', 2),
-('8', 'nicolas_rincon', 'Privado', '2558101', NULL, 1),
-('9', 'carlosperez', 'Privado', '2558101', NULL, 1),
-('10', 'Isaura-Juan', 'Privado', '2558101', NULL, 1),
-('11', 'Isaura-Nicolas', 'Privado', '2558101', NULL, 1),
-('12', 'Sebastian', 'Privado', '2558102', NULL, 1),
-('13', 'Isabella', 'Privado', '2558102', NULL, 1),
-('14', 'Ethan', 'Privado', '2558102', NULL, 1),
-('15', 'Sophia', 'Privado', '2558102', NULL, 1),
-('16', 'Alexander', 'Privado', '2558102', NULL, 1),
-('17', 'Olivia', 'Privado', '2558102', NULL, 1),
-('18', 'Mia Parker', 'Privado', '2558102', NULL, 1),
-('19', 'Javier', 'Privado', '2558102', NULL, 1),
-('20', 'Wendy', 'Privado', '2558102', NULL, 1);
+('1','Grupo de Heiver','Exploración de técnicas avanzadas de inteligencia artificial aplicadas al desarrollo de sistemas autónomos.','2558101', 'Grupo1.jpg',2),
+('2','Grupo de Leonardo','Estudio de metodologías de seguridad informática en el desarrollo de aplicaciones web y móviles.','2558101', 'Grupo2.jpg',2),
+('3','Grupo de Isaura','Análisis comparativo de lenguajes de programación para el desarrollo de aplicaciones en la nube.','2558101', 'Grupo3.jpg',2),
+('4','Grupo de Manolo','Estudio del impacto del deporte en la cultura juvenil.','2558102', 'Grupo4.jpg', 2),
+('5','Grupo de Wendy','Análisis de tendencias culturales en la industria del entretenimiento.','2558102', 'Grupo5.png', 2),
+('6','Grupo de Javier','Exploración de la relación entre arte y tecnología en la era digital.','2558102', 'Grupo6.jpg', 2),
+('7','Grupo de Alejandra','Gestión financiera en organizaciones sin fines de lucro.','2558103', 'Grupo7.jpg', 2),
+('8', NULL, 'Privado', '2558101', NULL, 1),
+('9', NULL, 'Privado', '2558101', NULL, 1),
+('10', NULL, 'Privado', '2558101', NULL, 1),
+('11', NULL, 'Privado', '2558101', NULL, 1),
+('12', NULL, 'Privado', '2558102', NULL, 1),
+('13', NULL, 'Privado', '2558102', NULL, 1),
+('14', NULL, 'Privado', '2558102', NULL, 1),
+('15', NULL, 'Privado', '2558102', NULL, 1),
+('16', NULL, 'Privado', '2558102', NULL, 1),
+('17', NULL, 'Privado', '2558102', NULL, 1),
+('18', NULL, 'Privado', '2558102', NULL, 1),
+('19', NULL, 'Privado', '2558102', NULL, 1),
+('20', NULL, 'Privado', '2558102', NULL, 1);
 
 INSERT INTO usuarios_grupos VALUES
-('1', '1', '12345678019', NULL),	 	# Heiver - Grupo 1
-('2', '1', '1131104356', 2), 		# Juan - Grupo 1
-('3', '1', '1021392807', NULL),  		# Nicolas - Grupo 1
-('4', '1', '1234567911', NULL),  		# Camilo - Grupo 1
-('5', '2', '12345678020', NULL), 		# Leonardo - Grupo 2
-('6', '2', '1131104356', NULL),  		# Juan - Grupo 2
-('7', '2', '1021392807', NULL),  		# Nicolas - Grupo 2
-('8', '2', '1234567911', NULL),  		# Camilo - Grupo 2
-('9', '3', '12345678018', NULL), 		# Isaura - Grupo 3
-('10', '3', '1131104356', NULL),  	# Juan - Grupo 3
-('11', '3', '1021392807', NULL),  	# Nicolas - Grupo 3
-('12', '4', '12345678021', NULL), 	# Manolo - Grupo 4
-('13', '4', '12345678912', NULL), 	# Sebastian -  Grupo 4
-('14', '4', '12345678913', NULL), 	# Isabella - Grupo 4
-('15', '4', '12345678914', NULL),		# Ethan - Grupo 4
-('16', '4', '12345678916', NULL), 	# Sophia - Grupo 4
-('17', '4', '12345678917', NULL),		# Alexander - Grupo 4
-('18', '4', '12345678918', NULL),		# Olivia - Grupo 4
-('19', '4', '12345678919', NULL), 	# Mia - Grupo 4
-('20', '4', '12345678001', NULL),		# John - Grupo 4 
-('21', '5', '12345678022', NULL), 	# Wendy - Grupo 5
-('22', '5', '12345678912', NULL), 	# Sebastian -  Grupo 5
-('23', '5', '12345678913', NULL), 	# Isabella - Grupo 5
-('24', '5', '12345678914', NULL),		# Ethan - Grupo 5
-('25', '5', '12345678916', NULL), 	# Sophia - Grupo 5
-('26', '5', '12345678917', NULL),		# Alexander - Grupo 5
-('27', '5', '12345678918', NULL),		# Olivia - Grupo 5
-('28', '5', '12345678919', NULL), 	# Mia - Grupo 5
-('29', '5', '12345678001', NULL),		# John - Grupo 5
-('30', '6', '12345678023', NULL), 	# Javier - Grupo 6
-('31', '6', '12345678912', NULL), 	# Sebastian -  Grupo 6
-('32', '6', '12345678913', NULL), 	# Isabella - Grupo 6
-('33', '6', '12345678914', NULL),		# Ethan - Grupo 6
-('34', '6', '12345678916', NULL), 	# Sophia - Grupo 6
-('35', '6', '12345678917', NULL),		# Alexander - Grupo 6
-('36', '6', '12345678918', NULL),		# Olivia - Grupo 6
-('37', '6', '12345678919', NULL), 	# Mia - Grupo 6
-('38', '6', '12345678001', NULL),		# John - Grupo 6
-('39', '8', '1131104356', NULL),		# Juan - Privado 8
-('40', '8', '1021392807', NULL),		# Nicolas - Privado 8
-('41', '9', '1131104356', NULL),		# Juan - Privado 9
-('42', '9', '1234567911', NULL),		# Camilo - Privado 9
-('43', '10', '1131104356', NULL),		# Juan - Privado 10
-('44', '10', '12345678018', NULL),	# Isaura - Privado 10
-('45', '11', '1021392807', NULL),		# Nicolas - Privado 11
-('46', '11', '12345678018', NULL),	# Isaura - Privado 11
-('47', '12', '12345678001', NULL),	# John - Privado 12
-('48', '12', '12345678912', NULL),	# Sebastian - Privado 12
-('49', '13', '12345678001', NULL),	# John - Privado 13
-('50', '13', '12345678913', NULL),	# Isabella - Privado 13
-('51', '14', '12345678001', NULL),	# John - Privado 14
-('52', '14', '12345678914', NULL),	# Ethan - Privado 14
-('53', '15', '12345678001', NULL),	# John - Privado 15
-('54', '15', '12345678916', NULL),	# Sophia - Privado 15
-('55', '16', '12345678001', NULL),	# John - Privado 16
-('56', '16', '12345678917', NULL),	# Alexander - Priavdo 16
-('57', '17', '12345678001', NULL),	# John - Privado 17
-('58', '17', '12345678918', NULL),	# Olivia - Privado 17
-('59', '18', '12345678001', NULL),	# John - Privado 18
-('60', '18', '12345678919', NULL),	# Mia - Privado 18
-('61', '19', '12345678001', NULL),	# John - Privado 19
-('62', '19', '12345678023', NULL),	# Javier - Privado 19
-('63', '20', '12345678001', NULL),	# John - Privado 20
-('64', '20', '12345678022', NULL);	# Wendy - Privado 20
+('1', '1', '12345678019', NULL, 1, '2023-01-01 12:00:00'),
+('2', '1', '1131104356', 2, 1, '2023-01-01 12:00:00'), 
+('3', '1', '1021392807', NULL, 1, '2023-01-01 12:00:00'),
+('4', '1', '1234567911', NULL, 1, '2023-01-01 12:00:00'), 
+('5', '2', '12345678020', NULL, 1, '2023-01-01 12:00:00'),
+('6', '2', '1131104356', NULL, 1, '2023-01-01 12:00:00'),
+('7', '2', '1021392807', NULL, 1, '2023-01-01 12:00:00'),	
+('8', '2', '1234567911', NULL, 1, '2023-01-01 12:00:00'),
+('9', '3', '12345678018', NULL, 1, '2023-01-01 12:00:00'), 
+('10', '3', '1131104356', NULL, 1, '2023-01-01 12:00:00'), 
+('11', '3', '1021392807', NULL, 1, '2023-01-01 12:00:00'),  	
+('12', '4', '12345678021', NULL, 1, '2023-01-01 12:00:00'),
+('13', '4', '12345678912', NULL, 1, '2023-01-01 12:00:00'), 
+('14', '4', '12345678913', NULL, 1, '2023-01-01 12:00:00'), 
+('15', '4', '12345678914', NULL, 1, '2023-01-01 12:00:00'),	
+('16', '4', '12345678916', NULL, 1, '2023-01-01 12:00:00'), 
+('17', '4', '12345678917', NULL, 1, '2023-01-01 12:00:00'),	
+('18', '4', '12345678918', NULL, 1, '2023-01-01 12:00:00'),	
+('19', '4', '12345678919', NULL, 1, '2023-01-01 12:00:00'), 
+('20', '4', '12345678001', NULL, 1, '2023-01-01 12:00:00'),	 
+('21', '5', '12345678022', NULL, 1, '2023-01-01 12:00:00'), 
+('22', '5', '12345678912', NULL, 1, '2023-01-01 12:00:00'), 
+('23', '5', '12345678913', NULL, 1, '2023-01-01 12:00:00'), 
+('24', '5', '12345678914', NULL, 1, '2023-01-01 12:00:00'),	
+('25', '5', '12345678916', NULL, 1, '2023-01-01 12:00:00'), 
+('26', '5', '12345678917', NULL, 1, '2023-01-01 12:00:00'),	
+('27', '5', '12345678918', NULL, 1, '2023-01-01 12:00:00'),	
+('28', '5', '12345678919', NULL, 1, '2023-01-01 12:00:00'), 
+('29', '5', '12345678001', NULL, 1, '2023-01-01 12:00:00'),	
+('30', '6', '12345678023', NULL, 1, '2023-01-01 12:00:00'), 
+('31', '6', '12345678912', NULL, 1, '2023-01-01 12:00:00'), 
+('32', '6', '12345678913', NULL, 1, '2023-01-01 12:00:00'), 
+('33', '6', '12345678914', NULL, 1, '2023-01-01 12:00:00'),	
+('34', '6', '12345678916', NULL, 1, '2023-01-01 12:00:00'), 
+('35', '6', '12345678917', NULL, 1, '2023-01-01 12:00:00'),	
+('36', '6', '12345678918', NULL, 1, '2023-01-01 12:00:00'),	
+('37', '6', '12345678919', NULL, 1, '2023-01-01 12:00:00'), 
+('38', '6', '12345678001', NULL, 1, '2023-01-01 12:00:00'),	
+('39', '8', '1131104356', NULL, 1, '2023-01-01 12:00:00'),	
+('40', '8', '1021392807', NULL, 1, '2023-01-01 12:00:00'),	
+('41', '9', '1131104356', NULL, 1, '2023-01-01 12:00:00'),	
+('42', '9', '1234567911', NULL, 1, '2023-01-01 12:00:00'),	
+('43', '10', '1131104356', NULL, 1, '2023-01-01 12:00:00'),	
+('44', '10', '12345678018', NULL, 1, '2023-01-01 12:00:00'),	
+('45', '11', '1021392807', NULL, 1, '2023-01-01 12:00:00'),	
+('46', '11', '12345678018', NULL, 1, '2023-01-01 12:00:00'),	
+('47', '12', '12345678001', NULL, 1, '2023-01-01 12:00:00'),	
+('48', '12', '12345678912', NULL, 1, '2023-01-01 12:00:00'),	
+('49', '13', '12345678001', NULL, 1, '2023-01-01 12:00:00'),	
+('50', '13', '12345678913', NULL, 1, '2023-01-01 12:00:00'),	
+('51', '14', '12345678001', NULL, 1, '2023-01-01 12:00:00'),	
+('52', '14', '12345678914', NULL, 1, '2023-01-01 12:00:00'),	
+('53', '15', '12345678001', NULL, 1, '2023-01-01 12:00:00'),	
+('54', '15', '12345678916', NULL, 1, '2023-01-01 12:00:00'),	
+('55', '16', '12345678001', NULL, 1, '2023-01-01 12:00:00'),	
+('56', '16', '12345678917', NULL, 1, '2023-01-01 12:00:00'),	
+('57', '17', '12345678001', NULL, 1, '2023-01-01 12:00:00'),	
+('58', '17', '12345678918', NULL, 1, '2023-01-01 12:00:00'),	
+('59', '18', '12345678001', NULL, 1, '2023-01-01 12:00:00'),	
+('60', '18', '12345678919', NULL, 1, '2023-01-01 12:00:00'),	
+('61', '19', '12345678001', NULL, 1, '2023-01-01 12:00:00'),	
+('62', '19', '12345678023', NULL, 1, '2023-01-01 12:00:00'),	
+('63', '20', '12345678001', NULL, 1, '2023-01-01 12:00:00'),	
+('64', '20', '12345678022', NULL, 1, '2023-01-01 12:00:00');	
 
 INSERT INTO mensaje VALUES
 ('1', '2023-11-25 10:30:00','HOLA','1','1'),
@@ -374,17 +376,3 @@ INSERT INTO mensaje VALUES
 ('44', '2023-10-02 09:19:00', 'No me sirve el programaaa', '41', '1'),
 ('45', '2023-10-02 09:19:00', 'Aiuda', '41', '1'),
 ('46', '2023-10-02 10:25:00', 'Ya te llamo 👌', '42', '1');
-
-# Traemos el nombre de usuario y el rol
-SELECT numerodoc, nombre_usuario, id_rol, nombre_rol FROM usuarios a
-INNER JOIN roles b ON a.fk_id_rol = b.id_rol;  
-
-# Con esta consulta llenamos los datos de los grupos en el chat 
-# (se condiciona mediante una variable con el numero de documento traida previamente)
-SELECT * FROM grupos a 
-INNER JOIN ficha b ON a.id_ficha = b.id_ficha  
-LEFT JOIN usuarios_grupos c ON a.id_grupos = c.id_grupos 
-WHERE c.numerodoc = '1131104356' AND fk_tipo_grupo = '2';
-
-# Con esta consulta traeremos los datos de los mensajes
-# (segun el grupo al cual pertenezcan y en el que el usuario se ubica)   # SELECT DISTINCT a.numerodoc, primer_nom, primer_apellido, contenido_mensaje, hora, id_tipo, id_usuarios_grupos FROM usuarios a   # RIGHT JOIN usuarios_grupos b ON a.numerodoc = b.numerodoc   # INNER JOIN mensaje c ON b.id_grupos = c.fk_id_grupos   # WHERE b.id_usuarios_grupos = 1;
