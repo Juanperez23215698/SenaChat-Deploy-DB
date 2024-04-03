@@ -1,16 +1,14 @@
 const mysql = require("mysql2");
 
-const conexion = mysql.createConnection({
+const conexion = mysql.createPool({
   host: process.env.HOST || "localhost",
   database: process.env.DB || "sena_chat",
   user: process.env.USER || "root",
-  password: process.env.PASSWORD || "",
+  password: process.env.PASSWORD || "root",
   port: process.env.DB_PORT || 3306,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
-conexion.connect((error) => {
-  if (error) throw error;
-  console.log("Conectado a base de datos");
-});
-
-module.exports = conexion;
+module.exports = conexion.promise();
