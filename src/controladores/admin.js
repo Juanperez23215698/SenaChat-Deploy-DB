@@ -76,7 +76,7 @@ exports.obtenerFichas = async (req, res) => {
 
 exports.obtenerProgramas = async (req, res) => {
   try {
-    const query = ` SELECT * FROM programa_formacion; `;
+    const query = ` SELECT * FROM programa_formacion;`;
 
     const [rows] = await conexion.execute(query);
 
@@ -92,7 +92,7 @@ exports.obtenerProgramas = async (req, res) => {
 
 exports.obtenerFichasId = async (req, res) => {
   try {
-    const query = ` SELECT id_ficha FROM ficha WHERE id_ficha <> '0000000';`;
+    const query = `SELECT id_ficha FROM ficha WHERE id_ficha <> '0000000';`;
 
     const [rows] = await conexion.execute(query);
 
@@ -142,7 +142,7 @@ exports.insertarGrupo = async (req, res) => {
 exports.insertarMensaje = async (req, res) => {
   try {
     const mensaje = req.body;
-    const query = "INSERT INTO mensaje SET ?";
+    const query = `INSERT INTO mensaje SET ?`;
     const resultado = await conexion.execute(query, mensaje);
 
     if (resultado[0] && resultado[0].affectedRows)
@@ -156,193 +156,250 @@ exports.insertarMensaje = async (req, res) => {
   }
 };
 
-exports.insertarUsuario = (req, res) => {
-  const usuario = req.body;
-  usuario.contrasena = md5(usuario.contrasena);
-  const usuarioFicha = usuario.id_fichas;
-  delete usuario.id_fichas;
-  const query = "INSERT INTO usuarios SET ?";
-  conexion.query(query, usuario, (errorUsuario, resultadoU) => {
-    if (errorUsuario) return console.error(errorUsuario.message);
-    const queryUF =
-      "INSERT INTO usuarios_fichas (id_fichas, numerodoc, principal) VALUES (?, ?, ?)";
-    conexion.query(
-      queryUF,
-      [usuarioFicha, usuario.numerodoc, 1],
-      (errorUsuarioFichas, resultadoUF) => {
-        if (errorUsuarioFichas)
-          return console.error(errorUsuarioFichas.message);
-        res.json(["Se inserto correctamente el usuario", usuario.numerodoc]);
-      }
-    );
-  });
+exports.insertarUsuario = async (req, res) => {
+  try {
+    const usuario = req.body;
+    usuario.contrasena = md5(usuario.contrasena);
+    const usuarioFicha = usuario.id_fichas;
+    delete usuario.id_fichas;
+
+    const queryUsuario = `INSERT INTO usuarios SET ?`;
+    const resultadoUsuario = await conexion.execute(queryUsuario, usuario);
+
+    const queryUF = `INSERT INTO usuarios_fichas (id_fichas, numerodoc, principal) VALUES (?, ?, ?)`;
+    await conexion.execute(queryUF, [usuarioFicha, usuario.numerodoc, 1]);
+
+    res.json(["Se insertó correctamente el usuario", usuario.numerodoc]);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error al insertar el usuario" });
+  }
 };
 
-exports.obtenerUnGrupo = (req, res) => {
-  const { id_grupo } = req.params;
-  const query = `SELECT * FROM grupos WHERE fk_tipo_grupo = 2 AND id_grupos = ?`;
+exports.obtenerUnGrupo = async (req, res) => {
+  try {
+    const { id_grupo } = req.params;
+    const query = `SELECT * FROM grupos WHERE fk_tipo_grupo = 2 AND id_grupos = ?`;
+    const [rows] = await conexion.execute(query, id_grupo);
 
-  conexion.query(query, id_grupo, (error, resultado) => {
-    if (error) console.error(error.message);
-    if (resultado.length > 0) res.json(resultado[0]);
-    else res.json("No hay grupos aun");
-  });
+    if (rows.length > 0) res.json(rows[0]);
+    else {
+      res.json("No hay grupos aun");
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error al obtener el grupo" });
+  }
 };
 
-exports.obtenerUnUsuario = (req, res) => {
-  const { numerodoc } = req.params;
-  const query = `SELECT correo, primer_nom, segundo_nom, primer_apellido, segundo_apellido, u.numerodoc, 
-  fk_id_tipodoc, id_fichas, foto, fk_id_rol, u.nombre_usuario FROM usuarios u INNER JOIN usuarios_fichas uf
-  ON u.numerodoc = uf.numerodoc WHERE u.numerodoc = ?;`;
+exports.obtenerUnUsuario = async (req, res) => {
+  try {
+    const { numerodoc } = req.params;
+    const query = `SELECT correo, primer_nom, segundo_nom, primer_apellido, segundo_apellido, u.numerodoc, 
+      fk_id_tipodoc, id_fichas, foto, fk_id_rol, u.nombre_usuario FROM usuarios u INNER JOIN usuarios_fichas uf
+      ON u.numerodoc = uf.numerodoc WHERE u.numerodoc = ?;`;
+    const [rows] = await conexion.execute(query, numerodoc);
 
-  conexion.query(query, numerodoc, (error, resultado) => {
-    if (error) console.error(error.message);
-    if (resultado.length > 0) res.json(resultado[0]);
-    else res.json("No hay usuarios aun");
-  });
+    if (rows.length > 0) res.json(rows[0]);
+    else {
+      res.json("No hay usuarios aun");
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error al obtener el usuario" });
+  }
 };
 
-exports.obtenerUnMensaje = (req, res) => {
-  const { id_mensaje } = req.params;
-  const query = `SELECT contenido_mensaje FROM mensaje WHERE id_mensaje = ?`;
+exports.obtenerUnMensaje = async (req, res) => {
+  try {
+    const { id_mensaje } = req.params;
+    const query = `SELECT contenido_mensaje FROM mensaje WHERE id_mensaje = ?`;
+    const [rows] = await conexion.execute(query, id_mensaje);
 
-  conexion.query(query, id_mensaje, (error, resultado) => {
-    if (error) console.error(error.message);
-    if (resultado.length > 0) res.json(resultado[0]);
-    else res.json("No hay mensajes aun");
-  });
+    if (rows.length > 0) res.json(rows[0]);
+    else {
+      res.json("No hay mensajes aun");
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error al obtener el mensaje" });
+  }
 };
 
-exports.obtenerUnaFicha = (req, res) => {
-  const { id_ficha } = req.params;
-  const query = `SELECT * FROM ficha WHERE id_ficha <> ? AND id_ficha = ?`;
+exports.obtenerUnaFicha = async (req, res) => {
+  try {
+    const { id_ficha } = req.params;
+    const query = `SELECT * FROM ficha WHERE id_ficha <> "0000000" AND id_ficha = ?`;
+    const [rows] = await conexion.execute(query, [id_ficha]);
 
-  conexion.query(query, ["0000000", id_ficha], (error, resultado) => {
-    if (error) console.error(error.message);
-    if (resultado.length > 0) res.json(resultado[0]);
-    else res.json("No hay fichas aun");
-  });
+    if (rows.length > 0) res.json(rows[0]);
+    else {
+      res.json("No hay fichas aun");
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error al obtener la ficha" });
+  }
 };
 
-exports.actualizarGrupo = (req, res) => {
-  const grupo = req.body;
-  const { id_grupo } = req.params;
-  const query = "UPDATE grupos SET ? WHERE id_grupos = ?";
-  conexion.query(query, [grupo, id_grupo], (error, resultado) => {
-    if (error) return console.error(error.message);
+exports.actualizarGrupo = async (req, res) => {
+  try {
+    const grupo = req.body;
+    const { id_grupo } = req.params;
+    const query = `UPDATE grupos SET ? WHERE id_grupos = ?`;
+    const [resultado] = await conexion.execute(query, [grupo, id_grupo]);
+
     if (resultado.affectedRows) res.json(id_grupo);
-    else res.json("Grupo no actualizado");
-  });
+    else {
+      res.json("Grupo no actualizado");
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error al actualizar el grupo" });
+  }
 };
 
-exports.actualizarFicha = (req, res) => {
-  const { id_ficha } = req.params;
-  const ficha = req.body;
-  const query = "UPDATE ficha SET ? WHERE id_ficha = ?;";
-  conexion.query(query, [ficha, id_ficha], (error, resultado) => {
-    if (error) return console.error(error.message);
-    if (resultado.affectedRows) res.json(ficha.id_ficha);
-    else res.json("Ficha no actualizado");
-  });
+exports.actualizarFicha = async (req, res) => {
+  try {
+    const { id_ficha } = req.params;
+    const ficha = req.body;
+    const query = `UPDATE ficha SET ? WHERE id_ficha = ?`;
+    const [resultado] = await conexion.execute(query, [ficha, id_ficha]);
+
+    if (resultado.affectedRows) res.json(id_ficha);
+    else {
+      res.json("Ficha no actualizada");
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error al actualizar la ficha" });
+  }
 };
 
-exports.actualizarMensaje = (req, res) => {
-  const { id_mensaje } = req.params;
-  const mensaje = req.body;
-  const query = "UPDATE mensaje SET ? WHERE id_mensaje = ?";
-  conexion.query(query, [mensaje, id_mensaje], (error, resultado) => {
-    if (error) return console.error(error.message);
+exports.actualizarMensaje = async (req, res) => {
+  try {
+    const { id_mensaje } = req.params;
+    const mensaje = req.body;
+    const query = `UPDATE mensaje SET ? WHERE id_mensaje = ?`;
+    const [resultado] = await conexion.execute(query, [mensaje, id_mensaje]);
+
     if (resultado.affectedRows) res.json(id_mensaje);
-    else res.json("Mensaje no actualizado");
-  });
+    else {
+      res.json("Mensaje no actualizado");
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error al actualizar el mensaje" });
+  }
 };
 
-exports.actualizarUsuario = (req, res) => {
-  const { numerodoc } = req.params;
-  const usuario = req.body;
-  usuario["u.numerodoc"] = usuario.numerodoc;
-  delete usuario.numerodoc;
+exports.actualizarUsuario = async (req, res) => {
+  try {
+    const { numerodoc } = req.params;
+    const usuario = req.body;
+    usuario["u.numerodoc"] = usuario.numerodoc;
+    delete usuario.numerodoc;
 
-  const query = `UPDATE usuarios_fichas f INNER JOIN usuarios u ON
-    u.numerodoc = f.numerodoc SET ? WHERE u.numerodoc = ?`;
-  conexion.query(query, [usuario, numerodoc], (error, resultado) => {
-    if (error) return console.error(error.message);
+    const query = `UPDATE usuarios_fichas f INNER JOIN usuarios u ON
+      u.numerodoc = f.numerodoc SET ? WHERE u.numerodoc = ?`;
+    const [resultado] = await conexion.execute(query, [usuario, numerodoc]);
+
     if (resultado.affectedRows > 0) res.json(numerodoc);
-    else res.json("Usuario no actualizado");
-  });
+    else {
+      res.json("Usuario no actualizado");
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error al actualizar el usuario" });
+  }
 };
 
-exports.obtenerMiembros = (req, res) => {
-  const { id_grupo } = req.params;
-  const query = `SELECT primer_nom, segundo_nom, primer_apellido, segundo_apellido, u.fk_id_rol,
+exports.obtenerMiembros = async (req, res) => {
+  try {
+    const { id_grupo } = req.params;
+    const query = `SELECT primer_nom, segundo_nom, primer_apellido, segundo_apellido, u.fk_id_rol,
           ug.numerodoc, foto, descripcion, ug.fecha_union, (SELECT COUNT(*) FROM mensaje m 
           WHERE m.fk_destino = ug.id_usuarios_grupos) AS num_mensajes, ug.id_usuarios_grupos
           FROM usuarios_grupos ug INNER JOIN usuarios u ON u.numerodoc = ug.numerodoc 
           WHERE ug.id_grupos = ? AND ug.activo = TRUE ORDER BY u.fk_id_rol`;
 
-  conexion.query(query, id_grupo, (error, result) => {
-    if (error) console.error(error.message);
-    if (result.length > 0) res.json(result);
-    else res.json("No hay miembros aun");
-  });
+    const [rows] = await conexion.execute(query, id_grupo);
+
+    if (rows.length > 0) res.json(rows);
+    else {
+      res.json("No hay miembros aun");
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error al obtener los miembros del grupo" });
+  }
 };
 
-exports.obtenerGruposDeFicha = (req, res) => {
-  const { id_ficha } = req.params;
-  const query = `SELECT * FROM grupos WHERE fk_tipo_grupo = 2 AND id_ficha = ?`;
+exports.obtenerGruposDeFicha = async (req, res) => {
+  try {
+    const { id_ficha } = req.params;
+    const query = `SELECT * FROM grupos WHERE fk_tipo_grupo = 2 AND id_ficha = ?`;
+    const [rows] = await conexion.execute(query, id_ficha);
 
-  conexion.query(query, id_ficha, (error, resultado) => {
-    if (error) console.error(error.message);
-    if (resultado.length > 0) res.json(resultado);
-    else res.json("No hay grupos aun");
-  });
+    if (rows.length > 0) res.json(rows);
+    else {
+      res.json("No hay grupos aun");
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error al obtener los grupos de la ficha" });
+  }
 };
 
-exports.obtenerDatosMensaje = (req, res) => {
-  const { id_mensaje } = req.params;
-  const query = `SELECT u.primer_nom, u.primer_apellido, u.foto, g.nom_grupos, g.id_ficha, g.foto_grupo,
-  u.numerodoc, u.segundo_apellido, u.segundo_nom, u.fk_id_tipodoc, g.fk_tipo_grupo, g.id_grupos 
-  FROM mensaje m INNER JOIN usuarios_grupos ug ON m.fk_destino = ug.id_usuarios_grupos 
-  INNER JOIN usuarios u ON ug.numerodoc = u.numerodoc INNER JOIN grupos g 
-  ON ug.id_grupos = g.id_grupos WHERE id_mensaje = ?;`;
+exports.obtenerDatosMensaje = async (req, res) => {
+  try {
+    const { id_mensaje } = req.params;
+    const query = `SELECT u.primer_nom, u.primer_apellido, u.foto, g.nom_grupos, g.id_ficha, g.foto_grupo,
+    u.numerodoc, u.segundo_apellido, u.segundo_nom, u.fk_id_tipodoc, g.fk_tipo_grupo, g.id_grupos 
+    FROM mensaje m INNER JOIN usuarios_grupos ug ON m.fk_destino = ug.id_usuarios_grupos 
+    INNER JOIN usuarios u ON ug.numerodoc = u.numerodoc INNER JOIN grupos g 
+    ON ug.id_grupos = g.id_grupos WHERE id_mensaje = ?;`;
 
-  conexion.query(query, id_mensaje, (error, resultado) => {
-    if (error) console.error(error.message);
-    if (resultado.length > 0) {
-      if (!resultado[0].foto_grupo && resultado[0].fk_tipo_grupo == 1) {
-        let mensaje = resultado[0];
+    const [rows] = await conexion.execute(query, id_mensaje);
+
+    if (rows.length > 0) {
+      const mensaje = rows[0];
+      if (!mensaje.foto_grupo && mensaje.fk_tipo_grupo == 1) {
         const query2 = `SELECT u.foto, u.primer_nom, u.segundo_nom, u.primer_apellido, u.segundo_apellido 
-        FROM usuarios_grupos ug INNER JOIN usuarios u ON u.numerodoc = ug.numerodoc INNER 
-        JOIN grupos g ON g.id_grupos = ug.id_grupos WHERE u.numerodoc <> ? AND g.id_grupos = ?;`;
-        conexion.query(
-          query2,
-          [mensaje.numerodoc, mensaje.id_grupos],
-          (error, resultado) => {
-            if (error) console.error(error.message);
-            if (resultado.length > 0) {
-              mensaje.foto_grupo = resultado[0].foto;
-              mensaje.nom_grupos = `${resultado[0].primer_nom} ${
-                resultado[0].segundo_nom ?? ""
-              } 
-              ${resultado[0].primer_apellido} ${
-                resultado[0].segundo_apellido ?? ""
-              }`;
-            }
-            res.json(mensaje);
-          }
-        );
-      } else res.json(resultado[0]);
-    } else res.json("El mensaje proporcionado NO existe");
-  });
+          FROM usuarios_grupos ug INNER JOIN usuarios u ON u.numerodoc = ug.numerodoc INNER 
+          JOIN grupos g ON g.id_grupos = ug.id_grupos WHERE u.numerodoc <> ? AND g.id_grupos = ?;`;
+
+        const [rows2] = await conexion.execute(query2, [mensaje.numerodoc, mensaje.id_grupos]);
+
+        if (rows2.length > 0) {
+          mensaje.foto_grupo = rows2[0].foto;
+          mensaje.nom_grupos = `${rows2[0].primer_nom} ${rows2[0].segundo_nom ?? ""} 
+            ${rows2[0].primer_apellido} ${rows2[0].segundo_apellido ?? ""}`;
+        }
+      }
+      res.json(mensaje);
+    } else {
+      res.json("El mensaje proporcionado NO existe");
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error al obtener los datos del mensaje" });
+  }
 };
 
-exports.eliminarMiembro = (req, res) => {
-  const datos = req.body;
-  const { id_ug } = req.params;
-  const query = "UPDATE usuarios_grupos SET ? WHERE id_usuarios_grupos = ?;";
-  conexion.query(query, [datos, id_ug], (error, resultado) => {
-    if (error) return console.error(error.message);
-    if (resultado.affectedRows) res.json("Se elimino correctamente");
-    else res.json("La relacion de usuario y grupo no se afecto");
-  });
+exports.eliminarMiembro = async (req, res) => {
+  try {
+    const datos = req.body;
+    const { id_ug } = req.params;
+    const query = `UPDATE usuarios_grupos SET ? WHERE id_usuarios_grupos = ?`;
+    const [resultado] = await conexion.execute(query, [datos, id_ug]);
+
+    if (resultado.affectedRows) res.json("Se eliminó correctamente");
+    else {
+      res.json("La relación de usuario y grupo no se afectó");
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error al eliminar el miembro del grupo" });
+  }
 };
