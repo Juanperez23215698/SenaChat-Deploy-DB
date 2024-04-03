@@ -1,13 +1,14 @@
 const conexion = require("./conexion");
 const md5 = require("md5");
 const nodeMailer = require("nodemailer");
+const mysql = require("mysql2");
 
 exports.inicioSesion = async (req, res) => {
   try {
     const { tipodoc, numerodoc, contrasena } = req.body;
     const query = `SELECT uf.id_fichas, uf.numerodoc, u.fk_id_rol FROM usuarios u
-      INNER JOIN usuarios_fichas uf ON u.numerodoc = uf.numerodoc
-      WHERE uf.numerodoc = ? AND fk_id_tipodoc = ? AND contrasena = ?`;
+    INNER JOIN usuarios_fichas uf ON u.numerodoc = uf.numerodoc
+    WHERE uf.numerodoc = ? AND fk_id_tipodoc = ? AND contrasena = ?`;
 
     const [rows] = await conexion.execute(query, [numerodoc, tipodoc, md5(contrasena)]);
 
@@ -89,7 +90,7 @@ exports.obtenerDatosUsuario = async (req, res) => {
     const numerodoc = req.params.numerodoc;
     const query = `SELECT * FROM usuarios u INNER JOIN usuarios_fichas f 
       ON u.numerodoc = f.numerodoc WHERE u.numerodoc = ?`;
-    const [rows] = await conexion.execute(query, numerodoc);
+    const [rows] = await conexion.execute(query, [numerodoc]);
 
     if (rows.length > 0) res.json(rows[0]);
     else {
@@ -105,7 +106,7 @@ exports.configurarUsuario = async (req, res) => {
   try {
     const { documento } = req.params;
     const nuevosDatos = req.body;
-    
+
     nuevosDatos["u.numerodoc"] = nuevosDatos.numerodoc;
     delete nuevosDatos.numerodoc;
 
