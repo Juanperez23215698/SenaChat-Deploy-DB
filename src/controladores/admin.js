@@ -1,5 +1,6 @@
 const conexion = require("./conexion");
 const md5 = require("md5");
+const format = require("mysql2").format;
 
 exports.obtenerGrupos = async (req, res) => {
   try {
@@ -7,7 +8,7 @@ exports.obtenerGrupos = async (req, res) => {
       LEFT JOIN usuarios_grupos ug ON g.id_grupos = ug.id_grupos 
       WHERE g.fk_tipo_grupo = 2 AND ug.activo = TRUE GROUP BY g.id_grupos;`;
 
-    const [rows] = await conexion.execute(query);
+    const [ rows ] = await conexion.execute(query);
 
     if (rows.length > 0) res.json(rows);
     else {
@@ -25,7 +26,7 @@ exports.obtenerUsuarios = async (req, res) => {
       nombre_usuario, fk_id_tipodoc, id_fichas, foto, fk_id_rol, descripcion FROM usuarios u
       INNER JOIN usuarios_fichas uf ON u.numerodoc = uf.numerodoc WHERE uf.principal = 1;`;
 
-    const [rows] = await conexion.execute(query);
+    const [ rows ] = await conexion.execute(query);
 
     if (rows.length > 0) res.json(rows);
     else {
@@ -44,7 +45,7 @@ exports.obtenerMensajes = async (req, res) => {
       LEFT JOIN usuarios_grupos ug ON m.fk_destino = ug.id_usuarios_grupos LEFT JOIN usuarios u 
       ON m.fk_destino = u.numerodoc OR ug.id_usuarios_grupos IS NULL ORDER BY m.id_mensaje DESC;`;
 
-    const [rows] = await conexion.execute(query);
+    const [ rows ] = await conexion.execute(query);
 
     if (rows.length > 0) res.json(rows);
     else {
@@ -62,7 +63,7 @@ exports.obtenerFichas = async (req, res) => {
       LEFT JOIN grupos g ON f.id_ficha = g.id_ficha AND g.fk_tipo_grupo = 2 INNER JOIN programa_formacion p 
       ON f.fk_programa = p.id_programa WHERE f.id_ficha <> '0000000' GROUP BY f.id_ficha;`;
 
-    const [rows] = await conexion.execute(query);
+    const [ rows ] = await conexion.execute(query);
 
     if (rows.length > 0) res.json(rows);
     else {
@@ -78,7 +79,7 @@ exports.obtenerProgramas = async (req, res) => {
   try {
     const query = ` SELECT * FROM programa_formacion;`;
 
-    const [rows] = await conexion.execute(query);
+    const [ rows ] = await conexion.execute(query);
 
     if (rows.length > 0) res.json(rows);
     else {
@@ -94,7 +95,7 @@ exports.obtenerFichasId = async (req, res) => {
   try {
     const query = `SELECT id_ficha FROM ficha WHERE id_ficha <> '0000000';`;
 
-    const [rows] = await conexion.execute(query);
+    const [ rows ] = await conexion.execute(query);
 
     if (rows.length > 0) res.json(rows);
     else {
@@ -109,10 +110,10 @@ exports.obtenerFichasId = async (req, res) => {
 exports.insertarFicha = async (req, res) => {
   try {
     const ficha = req.body;
-    const query = `INSERT INTO ficha SET ?`;
-    const [resultado] = await conexion.execute(query, ficha);
+    const query = format(`INSERT INTO ficha SET ?`, ficha);
+    const [ rows ] = await conexion.execute(query);
 
-    if (resultado[0] && resultado[0].affectedRows) res.json(ficha.id_ficha);
+    if (rows.affectedRows) res.json(ficha.id_ficha);
     else {
       res.status(500).json({ error: "Error al insertar la ficha" });
     }
@@ -125,11 +126,10 @@ exports.insertarFicha = async (req, res) => {
 exports.insertarGrupo = async (req, res) => {
   try {
     const grupo = req.body;
-    const query = `INSERT INTO grupos SET ?`;
-    const resultado = await conexion.execute(query, grupo);
+    const query =  format(`INSERT INTO grupos SET ?`, grupo);
+    const [ rows ] = await conexion.execute(query);
 
-    if (resultado[0] && resultado[0].affectedRows)
-      res.json(resultado[0].insertId);
+    if (rows.affectedRows) res.json(rows.insertId);
     else {
       res.status(500).json({ error: "Error al insertar el grupo" });
     }
@@ -142,11 +142,10 @@ exports.insertarGrupo = async (req, res) => {
 exports.insertarMensaje = async (req, res) => {
   try {
     const mensaje = req.body;
-    const query = `INSERT INTO mensaje SET ?`;
-    const resultado = await conexion.execute(query, mensaje);
+    const query = format(`INSERT INTO mensaje SET ?`, mensaje);
+    const [ rows ] = await conexion.execute(query);
 
-    if (resultado[0] && resultado[0].affectedRows)
-      res.json(resultado[0].insertId);
+    if (rows.affectedRows) res.json(rows.insertId);
     else {
       res.status(500).json({ error: "Error al insertar el mensaje" });
     }
@@ -163,13 +162,15 @@ exports.insertarUsuario = async (req, res) => {
     const usuarioFicha = usuario.id_fichas;
     delete usuario.id_fichas;
 
-    const queryUsuario = `INSERT INTO usuarios SET ?`;
-    const resultadoUsuario = await conexion.execute(queryUsuario, usuario);
+    const queryUsuario = format(`INSERT INTO usuarios SET ?`, usuario);
+    const [ rows ] = await conexion.execute(queryUsuario);
 
-    const queryUF = `INSERT INTO usuarios_fichas (id_fichas, numerodoc, principal) VALUES (?, ?, ?)`;
-    await conexion.execute(queryUF, [usuarioFicha, usuario.numerodoc, 1]);
-
-    res.json(["Se insertó correctamente el usuario", usuario.numerodoc]);
+    if (rows.affectedRows) {
+      const queryUF = `INSERT INTO usuarios_fichas (id_fichas, numerodoc, principal) VALUES (?, ?, ?)`;
+      const [ rows ] = await conexion.execute(queryUF, [usuarioFicha, usuario.numerodoc, 1]);
+      if (rows.affectedRows) res.json(["Se insertó correctamente el usuario", usuario.numerodoc]);
+    } else res.json("No se inserto al usuario");
+    
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ error: "Error al insertar el usuario" });
@@ -180,7 +181,7 @@ exports.obtenerUnGrupo = async (req, res) => {
   try {
     const { id_grupo } = req.params;
     const query = `SELECT * FROM grupos WHERE fk_tipo_grupo = 2 AND id_grupos = ?`;
-    const [rows] = await conexion.execute(query, id_grupo);
+    const [ rows ] = await conexion.execute(query, [id_grupo]);
 
     if (rows.length > 0) res.json(rows[0]);
     else {
@@ -198,7 +199,7 @@ exports.obtenerUnUsuario = async (req, res) => {
     const query = `SELECT correo, primer_nom, segundo_nom, primer_apellido, segundo_apellido, u.numerodoc, 
       fk_id_tipodoc, id_fichas, foto, fk_id_rol, u.nombre_usuario FROM usuarios u INNER JOIN usuarios_fichas uf
       ON u.numerodoc = uf.numerodoc WHERE u.numerodoc = ?;`;
-    const [rows] = await conexion.execute(query, numerodoc);
+    const [ rows ] = await conexion.execute(query, [numerodoc]);
 
     if (rows.length > 0) res.json(rows[0]);
     else {
@@ -214,7 +215,7 @@ exports.obtenerUnMensaje = async (req, res) => {
   try {
     const { id_mensaje } = req.params;
     const query = `SELECT contenido_mensaje FROM mensaje WHERE id_mensaje = ?`;
-    const [rows] = await conexion.execute(query, id_mensaje);
+    const [ rows ] = await conexion.execute(query, [id_mensaje]);
 
     if (rows.length > 0) res.json(rows[0]);
     else {
@@ -230,7 +231,7 @@ exports.obtenerUnaFicha = async (req, res) => {
   try {
     const { id_ficha } = req.params;
     const query = `SELECT * FROM ficha WHERE id_ficha <> "0000000" AND id_ficha = ?`;
-    const [rows] = await conexion.execute(query, [id_ficha]);
+    const [ rows ] = await conexion.execute(query, [id_ficha]);
 
     if (rows.length > 0) res.json(rows[0]);
     else {
@@ -246,10 +247,10 @@ exports.actualizarGrupo = async (req, res) => {
   try {
     const grupo = req.body;
     const { id_grupo } = req.params;
-    const query = `UPDATE grupos SET ? WHERE id_grupos = ?`;
-    const [resultado] = await conexion.execute(query, [grupo, id_grupo]);
+    const query = format(`UPDATE grupos SET ? WHERE id_grupos = ?`, [grupo, id_grupo]);
+    const [ rows ] = await conexion.execute(query);
 
-    if (resultado.affectedRows) res.json(id_grupo);
+    if (rows.affectedRows) res.json(id_grupo);
     else {
       res.json("Grupo no actualizado");
     }
@@ -263,10 +264,10 @@ exports.actualizarFicha = async (req, res) => {
   try {
     const { id_ficha } = req.params;
     const ficha = req.body;
-    const query = `UPDATE ficha SET ? WHERE id_ficha = ?`;
-    const [resultado] = await conexion.execute(query, [ficha, id_ficha]);
+    const query = format(`UPDATE ficha SET ? WHERE id_ficha = ?`, [ficha, id_ficha]);
+    const [ rows ] = await conexion.execute(query);
 
-    if (resultado.affectedRows) res.json(id_ficha);
+    if (rows.affectedRows) res.json(id_ficha);
     else {
       res.json("Ficha no actualizada");
     }
@@ -280,10 +281,10 @@ exports.actualizarMensaje = async (req, res) => {
   try {
     const { id_mensaje } = req.params;
     const mensaje = req.body;
-    const query = `UPDATE mensaje SET ? WHERE id_mensaje = ?`;
-    const [resultado] = await conexion.execute(query, [mensaje, id_mensaje]);
+    const query = format(`UPDATE mensaje SET ? WHERE id_mensaje = ?`, [mensaje, id_mensaje]);
+    const [ rows ] = await conexion.execute(query);
 
-    if (resultado.affectedRows) res.json(id_mensaje);
+    if (rows.affectedRows) res.json(id_mensaje);
     else {
       res.json("Mensaje no actualizado");
     }
@@ -300,11 +301,11 @@ exports.actualizarUsuario = async (req, res) => {
     usuario["u.numerodoc"] = usuario.numerodoc;
     delete usuario.numerodoc;
 
-    const query = `UPDATE usuarios_fichas f INNER JOIN usuarios u ON
-      u.numerodoc = f.numerodoc SET ? WHERE u.numerodoc = ?`;
-    const [resultado] = await conexion.execute(query, [usuario, numerodoc]);
+    const query = format(`UPDATE usuarios_fichas f INNER JOIN usuarios u ON
+    u.numerodoc = f.numerodoc SET ? WHERE u.numerodoc = ?`, [usuario, numerodoc]);
+    const [ rows ] = await conexion.execute(query);
 
-    if (resultado.affectedRows > 0) res.json(numerodoc);
+    if (rows.affectedRows) res.json(numerodoc);
     else {
       res.json("Usuario no actualizado");
     }
@@ -323,7 +324,7 @@ exports.obtenerMiembros = async (req, res) => {
           FROM usuarios_grupos ug INNER JOIN usuarios u ON u.numerodoc = ug.numerodoc 
           WHERE ug.id_grupos = ? AND ug.activo = TRUE ORDER BY u.fk_id_rol`;
 
-    const [rows] = await conexion.execute(query, id_grupo);
+    const [ rows ] = await conexion.execute(query, [id_grupo]);
 
     if (rows.length > 0) res.json(rows);
     else {
@@ -339,7 +340,7 @@ exports.obtenerGruposDeFicha = async (req, res) => {
   try {
     const { id_ficha } = req.params;
     const query = `SELECT * FROM grupos WHERE fk_tipo_grupo = 2 AND id_ficha = ?`;
-    const [rows] = await conexion.execute(query, id_ficha);
+    const [ rows ] = await conexion.execute(query, [id_ficha]);
 
     if (rows.length > 0) res.json(rows);
     else {
@@ -360,7 +361,7 @@ exports.obtenerDatosMensaje = async (req, res) => {
     INNER JOIN usuarios u ON ug.numerodoc = u.numerodoc INNER JOIN grupos g 
     ON ug.id_grupos = g.id_grupos WHERE id_mensaje = ?;`;
 
-    const [rows] = await conexion.execute(query, id_mensaje);
+    const [ rows ] = await conexion.execute(query, [id_mensaje]);
 
     if (rows.length > 0) {
       const mensaje = rows[0];
@@ -369,12 +370,12 @@ exports.obtenerDatosMensaje = async (req, res) => {
           FROM usuarios_grupos ug INNER JOIN usuarios u ON u.numerodoc = ug.numerodoc INNER 
           JOIN grupos g ON g.id_grupos = ug.id_grupos WHERE u.numerodoc <> ? AND g.id_grupos = ?;`;
 
-        const [rows2] = await conexion.execute(query2, [mensaje.numerodoc, mensaje.id_grupos]);
+        const [ rows ] = await conexion.execute(query2, [mensaje.numerodoc, mensaje.id_grupos]);
 
-        if (rows2.length > 0) {
-          mensaje.foto_grupo = rows2[0].foto;
-          mensaje.nom_grupos = `${rows2[0].primer_nom} ${rows2[0].segundo_nom ?? ""} 
-            ${rows2[0].primer_apellido} ${rows2[0].segundo_apellido ?? ""}`;
+        if (rows.length > 0) {
+          mensaje.foto_grupo = rows[0].foto;
+          mensaje.nom_grupos = `${rows[0].primer_nom} ${rows[0].segundo_nom ?? ""} 
+            ${rows[0].primer_apellido} ${rows[0].segundo_apellido ?? ""}`;
         }
       }
       res.json(mensaje);
@@ -391,10 +392,10 @@ exports.eliminarMiembro = async (req, res) => {
   try {
     const datos = req.body;
     const { id_ug } = req.params;
-    const query = `UPDATE usuarios_grupos SET ? WHERE id_usuarios_grupos = ?`;
-    const [resultado] = await conexion.execute(query, [datos, id_ug]);
+    const query = format(`UPDATE usuarios_grupos SET ? WHERE id_usuarios_grupos = ?`, [datos, id_ug]);
+    const [ rows ] = await conexion.execute(query);
 
-    if (resultado.affectedRows) res.json("Se eliminó correctamente");
+    if (rows.affectedRows) res.json("Se eliminó correctamente");
     else {
       res.json("La relación de usuario y grupo no se afectó");
     }

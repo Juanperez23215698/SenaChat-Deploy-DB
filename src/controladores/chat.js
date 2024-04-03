@@ -27,7 +27,7 @@ exports.obtenerGrupos = async (req, res) => {
                     WHERE numerodoc = ? AND fk_tipo_grupo <> 1 AND ug.activo = TRUE
                     ORDER BY fecha_reciente DESC`;
 
-    const [rows] = await conexion.execute(query, [numerodoc]);
+    const [ rows ] = await conexion.execute(query, [numerodoc]);
 
     if (rows.length > 0) res.json(rows);
     else {
@@ -46,7 +46,7 @@ exports.obtenerMiembros = async (req, res) => {
             u.fk_id_rol, foto, descripcion FROM usuarios_grupos ug INNER JOIN usuarios u 
             ON u.numerodoc = ug.numerodoc WHERE ug.id_grupos = ? AND ug.activo = TRUE ORDER BY u.fk_id_rol`;
 
-    const [rows] = await conexion.execute(query, [grupo]);
+    const [ rows ] = await conexion.execute(query, [grupo]);
 
     if (rows.length > 0) res.json(rows);
     else {
@@ -63,7 +63,7 @@ exports.obtenerInformacion = async (req, res) => {
     const grupo = req.params.grupo;
     const query = `SELECT nom_grupos, descripcion_grupos FROM grupos WHERE id_grupos = ?`;
 
-    const [rows] = await conexion.execute(query, [grupo]);
+    const [ rows ] = await conexion.execute(query, [grupo]);
 
     if (rows.length > 0) res.json(rows);
     else {
@@ -78,14 +78,14 @@ exports.obtenerInformacion = async (req, res) => {
 exports.obtenerMensajes = async (req, res) => {
   try {
     const grupo = req.params.grupo;
-    const query = `SELECT id_mensaje, primer_nom, primer_apellido, fecha_hora, contenido_mensaje, id_tipo, u.numerodoc 
-            FROM usuarios_grupos ug
+    const query = `SELECT id_mensaje, primer_nom, primer_apellido, fecha_hora, contenido_mensaje, 
+            id_tipo, u.numerodoc FROM usuarios_grupos ug
             INNER JOIN grupos g ON ug.id_grupos = g.id_grupos 
             INNER JOIN usuarios u ON u.numerodoc = ug.numerodoc
             INNER JOIN mensaje m ON m.fk_destino = ug.id_usuarios_grupos
             WHERE ug.id_grupos = ? ORDER BY id_mensaje`;
 
-    const [rows] = await conexion.execute(query, [grupo]);
+    const [ rows ] = await conexion.execute(query, [grupo]);
 
     if (rows.length > 0) res.json(rows);
     else {
@@ -102,7 +102,7 @@ exports.obtenerDestino = async (req, res) => {
     const { usuario, grupo } = req.params;
     const query = `SELECT id_usuarios_grupos FROM usuarios_grupos WHERE id_grupos = ? AND numerodoc = ?`;
 
-    const [rows] = await conexion.execute(query, [grupo, usuario]);
+    const [ rows ] = await conexion.execute(query, [grupo, usuario]);
 
     if (rows.length > 0) res.json(rows[0].id_usuarios_grupos);
     else {
@@ -118,7 +118,7 @@ exports.insertarMensaje = async (req, res) => {
   try {
     const mensaje = req.body;
     const query = format(`INSERT INTO mensaje SET ?`, mensaje);
-    const [rows] = await conexion.execute(query);
+    const [ rows ] = await conexion.execute(query);
     
     if (rows.affectedRows) res.json(rows.insertId);
     else res.json('No se inserto el mensaje');
@@ -136,11 +136,11 @@ exports.obtenerPrivados = async (req, res) => {
                     LEFT JOIN usuarios_grupos ug ON g.id_grupos = ug.id_grupos
                     WHERE numerodoc = ? AND fk_tipo_grupo <> 2 ORDER BY fecha_reciente DESC`;
 
-    const [rows] = await conexion.execute(query, [numerodoc, numerodoc]);
+    const [ rows ] = await conexion.execute(query, [numerodoc, numerodoc]);
 
     if (rows.length > 0) res.json(rows);
     else {
-      res.json("No hay grupos privados aun");
+      res.json("No hay privados aun");
     }
   } catch (error) {
     console.error(error.message);
@@ -151,13 +151,12 @@ exports.obtenerPrivados = async (req, res) => {
 exports.actualizarSinLeer = async (req, res) => {
   try {
     const { u: numerodoc, g: id_grupos } = req.body;
-    const query = `UPDATE usuarios_grupos
-                    SET sin_leer = COALESCE(sin_leer, 0) + 1
-                    WHERE numerodoc <> ? AND id_grupos = ?`;
+    const query = format(`UPDATE usuarios_grupos SET sin_leer = COALESCE(sin_leer, 0) + 1
+    WHERE numerodoc <> ? AND id_grupos = ?`, [numerodoc, id_grupos]);
 
-    const [result] = await conexion.execute(query, [numerodoc, id_grupos]);
+    const [ rows ] = await conexion.execute(query);
 
-    if (result.affectedRows != 0) res.json(result.affectedRows);
+    if (rows.affectedRows) res.json(rows.affectedRows);
     else {
       res.json("Caso en que no notifica");
     }
@@ -170,12 +169,12 @@ exports.actualizarSinLeer = async (req, res) => {
 exports.reiniciarSinLeer = async (req, res) => {
   try {
     const { u: numerodoc, g: id_grupos } = req.body;
-    const query = `UPDATE usuarios_grupos SET sin_leer = NULL
-                    WHERE numerodoc = ? AND id_grupos = ?`;
+    const query = format(`UPDATE usuarios_grupos SET sin_leer = NULL
+    WHERE numerodoc = ? AND id_grupos = ?`, [numerodoc, id_grupos]);
 
-    const [result] = await conexion.execute(query, [numerodoc, id_grupos]);
+    const [ rows ] = await conexion.execute(query);
 
-    if (result.affectedRows != 0) res.json(result.affectedRows);
+    if (rows.affectedRows) res.json(rows.affectedRows);
     else {
       res.json("Caso en que no notifica");
     }

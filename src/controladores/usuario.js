@@ -1,7 +1,7 @@
 const conexion = require("./conexion");
 const md5 = require("md5");
 const nodeMailer = require("nodemailer");
-const mysql = require("mysql2");
+const format = require("mysql2").format;
 
 exports.inicioSesion = async (req, res) => {
   try {
@@ -10,7 +10,7 @@ exports.inicioSesion = async (req, res) => {
     INNER JOIN usuarios_fichas uf ON u.numerodoc = uf.numerodoc
     WHERE uf.numerodoc = ? AND fk_id_tipodoc = ? AND contrasena = ?`;
 
-    const [rows] = await conexion.execute(query, [numerodoc, tipodoc, md5(contrasena)]);
+    const [ rows ] = await conexion.execute(query, [numerodoc, tipodoc, md5(contrasena)]);
 
     if (rows.length > 0) {
       const { id_fichas, numerodoc, fk_id_rol } = rows[0];
@@ -57,13 +57,16 @@ exports.registrarUsuario = async (req, res) => {
     delete usuario?.confirmar;
     usuario.contrasena = md5(usuario.contrasena);
 
-    const queryUsuario = `INSERT INTO usuarios SET ?`;
-    const resultadoUsuario = await conexion.execute(queryUsuario, usuario);
+    const queryUsuario = format(`INSERT INTO usuarios SET ?`, usuario);
+    const [ rows ] = await conexion.execute(queryUsuario);
 
-    const queryUsuarioFichas = `INSERT INTO usuarios_fichas (id_fichas, numerodoc, principal) VALUES (?, ?, ?)`;
-    const resultadoUsuarioFichas = await conexion.execute(queryUsuarioFichas, ["0000000", usuario.numerodoc, 1]);
+    if (rows.affectedRows) {
+      const queryUF = `INSERT INTO usuarios_fichas (id_fichas, numerodoc, principal) VALUES (?, ?, ?)`;
+      const [ rows ] = await conexion.execute(queryUF, ["0000000", usuario.numerodoc, 1]);
 
-    res.json(["Se insertó correctamente el usuario", usuario.numerodoc]);
+      if (rows.affectedRows) res.json(["Se insertó correctamente el usuario", usuario.numerodoc]);
+      else res.json('No se agrego el usuario');
+    }
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ error: "Error al registrar usuario" });
@@ -72,6 +75,7 @@ exports.registrarUsuario = async (req, res) => {
 
 exports.bienvenidaUsuario = async (req, res) => {
   try {
+    // RUTA EN DESHUSO
     const numerodoc = req.params.documento;
     const ficha = req.body.buscar;
 
@@ -90,12 +94,10 @@ exports.obtenerDatosUsuario = async (req, res) => {
     const numerodoc = req.params.numerodoc;
     const query = `SELECT * FROM usuarios u INNER JOIN usuarios_fichas f 
       ON u.numerodoc = f.numerodoc WHERE u.numerodoc = ?`;
-    const [rows] = await conexion.execute(query, [numerodoc]);
+    const [ rows ] = await conexion.execute(query, [numerodoc]);
 
     if (rows.length > 0) res.json(rows[0]);
-    else {
-      res.json("Usuario no encontrado");
-    }
+    else res.json("Usuario no encontrado");
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ error: "Error al obtener datos del usuario" });
@@ -110,14 +112,12 @@ exports.configurarUsuario = async (req, res) => {
     nuevosDatos["u.numerodoc"] = nuevosDatos.numerodoc;
     delete nuevosDatos.numerodoc;
 
-    const query = `UPDATE usuarios_fichas f INNER JOIN usuarios u ON
-      u.numerodoc = f.numerodoc SET ? WHERE u.numerodoc = ?`;
-    const [resultado] = await conexion.execute(query, [nuevosDatos, documento]);
+    const query = format(`UPDATE usuarios_fichas f INNER JOIN usuarios u ON
+    u.numerodoc = f.numerodoc SET ? WHERE u.numerodoc = ?`, [nuevosDatos, documento]);
+    const [ rows ] = await conexion.execute(query);
 
-    if (resultado.affectedRows > 0) res.json("Actualizado");
-    else {
-      res.json("Usuario no encontrado");
-    }
+    if (rows.affectedRows) res.json("Actualizado");
+    else res.json("Usuario no actualizado");
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ error: "Error al configurar usuario" });
