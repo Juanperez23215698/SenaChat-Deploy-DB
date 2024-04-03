@@ -65,5 +65,5 @@ http.listen(puerto, () => {
 });
 
 app.get("/", (req, res) => {
-  res.send("funciona API");
+  res.status(200).send("funciona API");
 });
