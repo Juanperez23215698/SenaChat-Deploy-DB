@@ -26,11 +26,11 @@ router.put("/editar-ficha/:id_ficha", adminController.actualizarFicha);
 router.put("/editar-grupo/:id_grupo", adminController.actualizarGrupo);
 router.put("/editar-mensaje/:id_mensaje", adminController.actualizarMensaje);
 router.put("/editar-usuario/:numerodoc", adminController.actualizarUsuario);
-router.put("/eliminar-ficha/:id_ficha", adminController.actualizarFicha);
-router.put("/eliminar-grupo/:id_grupo", adminController.actualizarGrupo);
-router.put("/eliminar-miembro/:id_ug", adminController.eliminarMiembro);
-router.put("/eliminar-mensaje/:id_mensaje", adminController.actualizarMensaje);
-router.put("/eliminar-usuario/:numerodoc", adminController.actualizarUsuario);
 router.put("/actualizar-miembro/:id_ug", adminController.actualizarMiembro);
+router.put("/eliminar-miembro/:id_ug", adminController.eliminarMiembro);
+router.delete("/eliminar-ficha/:id_ficha", adminController.eliminarFicha);
+router.delete("/eliminar-grupo/:id_grupo", adminController.eliminarGrupo);
+router.delete("/eliminar-mensaje/:id_mensaje", adminController.eliminarMensaje);
+router.delete("/eliminar-usuario/:numerodoc", adminController.eliminarUsuario);
 
 module.exports = router;

@@ -319,7 +319,7 @@ exports.obtenerMiembros = async (req, res) => {
   try {
     const { id_grupo } = req.params;
     const query = `SELECT primer_nom, segundo_nom, primer_apellido, segundo_apellido, u.fk_id_rol,
-          ug.numerodoc, foto, descripcion, ug.fecha_union, (SELECT COUNT(*) FROM mensaje m 
+          ug.numerodoc, foto, ug.fecha_union, (SELECT COUNT(*) FROM mensaje m 
           WHERE m.fk_destino = ug.id_usuarios_grupos) AS num_mensajes, ug.id_usuarios_grupos
           FROM usuarios_grupos ug INNER JOIN usuarios u ON u.numerodoc = ug.numerodoc 
           WHERE ug.id_grupos = ? AND ug.activo = TRUE ORDER BY u.fk_id_rol`;
@@ -426,7 +426,7 @@ exports.agregarMiembro = async (req, res) => {
     const [ rows ] = await conexion.execute(query);
 
     if (rows.affectedRows) res.json(rows.insertId);
-    else res.json("No se agrego el miembro");
+    else res.status(204).json("No se agrego el miembro");
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ error: "Error al agregar el miembro del grupo" });
@@ -459,12 +459,69 @@ exports.actualizarMiembro = async (req, res) => {
     const datos = req.body;
     const { id_ug } = req.params;
     const query = format(`UPDATE usuarios_grupos SET ? WHERE id_usuarios_grupos = ?`, [datos, id_ug]);
+    console.log(query);
     const [ rows ] = await conexion.execute(query);
 
-    if (rows.affectedRows) res.json(rows.insertId);
-    else res.json("No se actualizo");
+    if (rows.affectedRows) res.json('Actualizado');
+    else res.status(204).json(null);
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ error: "Error al actualizar miembro" });
+  }
+};
+
+exports.eliminarFicha = async (req, res) => {
+  try {
+    const { id_ficha } = req.params;
+    const query = `DELETE FROM ficha WHERE id_ficha = ?`;
+    const [ result ] = await conexion.execute(query, [id_ficha]);
+
+    if (result.affectedRows) res.json('Ficha eliminada correctamente');
+    else res.status(404).json({ error: "La ficha no existe" });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error al eliminar la ficha" });
+  }
+};
+
+exports.eliminarGrupo = async (req, res) => {
+  try {
+    const { id_grupo } = req.params;
+    const query = `DELETE FROM grupos WHERE id_grupos = ?`;
+    const [ result ] = await conexion.execute(query, [id_grupo]);
+
+    if (result.affectedRows) res.json('Grupo eliminado correctamente');
+    else res.status(404).json({ error: "El grupo no existe" });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error al eliminar el grupo" });
+  }
+};
+
+exports.eliminarMensaje = async (req, res) => {
+  try {
+    const { id_mensaje } = req.params;
+    const query = `DELETE FROM mensaje WHERE id_mensaje = ?`;
+    const [ result ] = await conexion.execute(query, [id_mensaje]);
+
+    if (result.affectedRows) res.json('Mensaje eliminado correctamente');
+    else res.status(404).json({ error: "El mensaje no existe" });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error al eliminar el mensaje" });
+  }
+};
+
+exports.eliminarUsuario = async (req, res) => {
+  try {
+    const { numerodoc } = req.params;
+    const query = `DELETE FROM usuarios WHERE numerodoc = ?`;
+    const [ result ] = await conexion.execute(query, [numerodoc]);
+
+    if (result.affectedRows) res.json('Usuario eliminado correctamente');
+    else res.status(404).json({ error: "El usuario no existe" });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error al eliminar el usuario" });
   }
 };
