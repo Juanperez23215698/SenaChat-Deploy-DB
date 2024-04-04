@@ -36,7 +36,7 @@ CREATE TABLE mensaje
 	id_mensaje INT NOT NULL AUTO_INCREMENT,
 	fecha_hora DATETIME NOT NULL,
 	contenido_mensaje VARCHAR(10000) NOT NULL,
-	fk_destino VARCHAR(50) NOT NULL,
+	fk_destino INT NOT NULL,
 	id_tipo INT NOT NULL,
 	PRIMARY KEY (id_mensaje)
 );
@@ -79,7 +79,7 @@ CREATE TABLE usuarios
 
 CREATE TABLE usuarios_grupos 
 (
-	id_usuarios_grupos VARCHAR(50) NOT NULL,
+	id_usuarios_grupos INT NOT NULL AUTO_INCREMENT,
 	id_grupos INT NOT NULL,
 	numerodoc VARCHAR(20) NOT NULL,
 	sin_leer INT NULL,

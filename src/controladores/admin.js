@@ -4,9 +4,9 @@ const format = require("mysql2").format;
 
 exports.obtenerGrupos = async (req, res) => {
   try {
-    const query = `SELECT g.*, COUNT(ug.numerodoc) AS num_usuarios FROM grupos g
-      LEFT JOIN usuarios_grupos ug ON g.id_grupos = ug.id_grupos 
-      WHERE g.fk_tipo_grupo = 2 AND ug.activo = TRUE GROUP BY g.id_grupos;`;
+    const query = `SELECT g.*, COUNT(CASE WHEN ug.activo = TRUE THEN ug.numerodoc END)
+      AS num_usuarios FROM grupos g LEFT JOIN usuarios_grupos ug ON g.id_grupos = ug.id_grupos 
+      WHERE g.fk_tipo_grupo = 2 GROUP BY g.id_grupos;`;
 
     const [ rows ] = await conexion.execute(query);
 
@@ -402,5 +402,69 @@ exports.eliminarMiembro = async (req, res) => {
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ error: "Error al eliminar el miembro del grupo" });
+  }
+};
+
+exports.obtenerMiembro = async (req, res) => {
+  try {
+    const { numerodoc, id_grupo } = req.params;
+    const query = `SELECT id_usuarios_grupos FROM usuarios_grupos WHERE numerodoc = ? AND id_grupos = ?`;
+    const [ rows ] = await conexion.execute(query, [numerodoc, id_grupo]);
+
+    if (rows.length > 0) res.json(rows[0]);
+    else res.json(false);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error comprobando al miembro" });
+  }
+};
+
+exports.agregarMiembro = async (req, res) => {
+  try {
+    const miembro = req.body;
+    const query = format(`INSERT INTO usuarios_grupos SET ?`, miembro);
+    const [ rows ] = await conexion.execute(query);
+
+    if (rows.affectedRows) res.json(rows.insertId);
+    else res.json("No se agrego el miembro");
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error al agregar el miembro del grupo" });
+  }
+};
+
+exports.miembrosFaltantes = async (req, res) => {
+  const { id_ficha, rol, id_grupo } = req.body;
+  try {
+    const query = format(`SELECT primer_nom, segundo_nom, primer_apellido, 
+    segundo_apellido, u.numerodoc, foto, fk_id_rol FROM usuarios u 
+    INNER JOIN usuarios_fichas uf ON u.numerodoc = uf.numerodoc 
+    INNER JOIN grupos g ON g.id_ficha = uf.id_fichas 
+    LEFT JOIN usuarios_grupos ug ON u.numerodoc = ug.numerodoc AND g.id_grupos = ug.id_grupos
+    WHERE uf.id_fichas = ? AND fk_id_rol = ? AND g.id_grupos = ?
+    AND (ug.activo = FALSE OR ug.numerodoc IS NULL);`, [id_ficha, rol, id_grupo]);
+
+    const [ rows ] = await conexion.execute(query);
+
+    if (rows.length > 0) res.json(rows);
+    else res.status(204).json("No hay contenido para mostrar");
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error al seleccionar miembros faltantes" });
+  }
+};
+
+exports.actualizarMiembro = async (req, res) => {
+  try {
+    const datos = req.body;
+    const { id_ug } = req.params;
+    const query = format(`UPDATE usuarios_grupos SET ? WHERE id_usuarios_grupos = ?`, [datos, id_ug]);
+    const [ rows ] = await conexion.execute(query);
+
+    if (rows.affectedRows) res.json(rows.insertId);
+    else res.json("No se actualizo");
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error al actualizar miembro" });
   }
 };
